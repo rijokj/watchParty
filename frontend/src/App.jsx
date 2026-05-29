@@ -21,6 +21,7 @@ function App() {
 
   // Real or Mock Socket state
   const [socket, setSocket] = useState(null);
+  const [socketStatus, setSocketStatus] = useState('connecting');
   const [isRealServer, setIsRealServer] = useState(true);
   const [activeUsers, setActiveUsers] = useState(['You']);
   const [messages, setMessages] = useState([]);
@@ -61,11 +62,27 @@ function App() {
           ? 'http://localhost:5000' 
           : window.location.origin.replace('5173', '5000'));
       
-      const realSocket = io(serverUrl);
+      console.log('[Socket] Connecting to server URL:', serverUrl);
+      setSocketStatus('connecting');
+
+      const realSocket = io(serverUrl, {
+        transports: ['websocket']
+      });
       setSocket(realSocket);
 
       realSocket.on('connect', () => {
         console.log('Connected to real sync server!');
+        setSocketStatus('connected');
+      });
+
+      realSocket.on('disconnect', () => {
+        console.log('Disconnected from sync server');
+        setSocketStatus('disconnected');
+      });
+
+      realSocket.on('connect_error', (err) => {
+        console.error('Socket connection error:', err);
+        setSocketStatus('error');
       });
 
       realSocket.on('chat-message', (msg) => {
@@ -98,6 +115,7 @@ function App() {
       };
     } else {
       setSocket(mockSocket);
+      setSocketStatus('sandbox');
       
       const onSystemMsg = (data) => {
         addSystemMessage(data.text);
@@ -319,34 +337,77 @@ function App() {
         </div>
         
         {isInRoom && (
-          <>
-            {/* Center Room code and copy invite link button */}
-            <div className="header-room-badge">
-              <span className="header-room-name">
-                Room: <span>LoveNest 💕</span>
-              </span>
-              <button className="btn-invite-copy" onClick={handleCopyLink}>
-                <Share2 size={12} />
-                <span>{copied ? 'Copied!' : 'Copy Invite Link'}</span>
-              </button>
-            </div>
+          /* Center Room code and copy invite link button */
+          <div className="header-room-badge">
+            <span className="header-room-name">
+              Room: <span>LoveNest 💕</span>
+            </span>
+            <button className="btn-invite-copy" onClick={handleCopyLink}>
+              <Share2 size={12} />
+              <span>{copied ? 'Copied!' : 'Copy Invite Link'}</span>
+            </button>
+          </div>
+        )}
 
-            {/* Right quick profiles dashboard */}
-            <div className="header-profile-section">
-              {/* Toggle sandbox / server */}
-              <div 
-                className="badge" 
-                style={{ 
-                  cursor: 'pointer', 
-                  background: isRealServer ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 75, 145, 0.12)', 
-                  borderColor: isRealServer ? 'var(--success)' : 'var(--primary)' 
-                }} 
-                onClick={() => setIsRealServer(!isRealServer)}
-              >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isRealServer ? 'var(--success)' : 'var(--primary)', display: 'inline-block' }}></span>
-                <span style={{ fontSize: '0.8rem' }}>{isRealServer ? 'Live Server' : 'Sandbox Mock'}</span>
-              </div>
+        {/* Right quick profiles dashboard */}
+        <div className="header-profile-section" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Toggle sandbox / server status */}
+          <div 
+            className="badge" 
+            style={{ 
+              cursor: 'pointer', 
+              background: 
+                socketStatus === 'connected' ? 'rgba(16, 185, 129, 0.12)' :
+                socketStatus === 'connecting' ? 'rgba(245, 158, 11, 0.12)' :
+                socketStatus === 'error' ? 'rgba(239, 68, 68, 0.12)' :
+                'rgba(255, 75, 145, 0.12)', 
+              borderColor: 
+                socketStatus === 'connected' ? 'var(--success)' :
+                socketStatus === 'connecting' ? '#f59e0b' :
+                socketStatus === 'error' ? '#ef4444' :
+                'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }} 
+            onClick={() => {
+              if (socketStatus === 'error' || socketStatus === 'disconnected') {
+                // Toggle mode to force reconnect
+                setIsRealServer(false);
+                setTimeout(() => setIsRealServer(true), 100);
+              } else {
+                setIsRealServer(!isRealServer);
+              }
+            }}
+            title={
+              socketStatus === 'error' 
+                ? "Click to retry connection" 
+                : isRealServer 
+                  ? "Click to toggle Sandbox Mode" 
+                  : "Click to toggle Live Server"
+            }
+          >
+            <span style={{ 
+              width: '6px', 
+              height: '6px', 
+              borderRadius: '50%', 
+              background: 
+                socketStatus === 'connected' ? 'var(--success)' :
+                socketStatus === 'connecting' ? '#f59e0b' :
+                socketStatus === 'error' ? '#ef4444' :
+                'var(--primary)', 
+              display: 'inline-block' 
+            }}></span>
+            <span style={{ fontSize: '0.8rem' }}>
+              {socketStatus === 'connected' && 'Live Server'}
+              {socketStatus === 'connecting' && 'Connecting...'}
+              {socketStatus === 'error' && 'Connection Error'}
+              {socketStatus === 'sandbox' && 'Sandbox Mock'}
+            </span>
+          </div>
 
+          {isInRoom && (
+            <>
               <button className="icon-circle-btn" title="Participants list"><Users size={18} /></button>
               <button className="icon-circle-btn" title="Settings"><Settings size={18} /></button>
               
@@ -357,9 +418,9 @@ function App() {
                 <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{userName}</span>
                 <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </header>
 
       {/* Main Content Area */}
