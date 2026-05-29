@@ -340,8 +340,7 @@ function App() {
             <div className="logo-tagline">Watch Together, Anywhere</div>
           </div>
         </div>
-        
-        {isInRoom ? (
+            {isInRoom ? (
           <>
             {/* Center Room code and copy invite link button */}
             <div className="header-room-badge">
