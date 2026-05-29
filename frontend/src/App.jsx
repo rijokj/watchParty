@@ -22,6 +22,16 @@ function App() {
   // Real or Mock Socket state
   const [socket, setSocket] = useState(null);
   const [isRealServer, setIsRealServer] = useState(true);
+  const [backendUrl, setBackendUrl] = useState(() => {
+    return localStorage.getItem('custom_backend_url') || 
+      import.meta.env.VITE_BACKEND_URL || 
+      (window.location.hostname === 'localhost' 
+        ? 'http://localhost:5000' 
+        : window.location.origin);
+  });
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [showBackendSettings, setShowBackendSettings] = useState(false);
+  const [tempBackendUrl, setTempBackendUrl] = useState('');
   const [activeUsers, setActiveUsers] = useState(['You']);
   const [messages, setMessages] = useState([]);
   
@@ -56,16 +66,28 @@ function App() {
   // Set up socket connection (defaults to mock, can connect to real server)
   useEffect(() => {
     if (isRealServer) {
-      const serverUrl = import.meta.env.VITE_BACKEND_URL || 
-        (window.location.hostname === 'localhost' 
-          ? 'http://localhost:5000' 
-          : window.location.origin.replace('5173', '5000'));
+      setConnectionStatus('connecting');
+      console.log('Connecting to server:', backendUrl);
       
-      const realSocket = io(serverUrl);
+      const realSocket = io(backendUrl, {
+        reconnectionAttempts: 5,
+        timeout: 10000
+      });
       setSocket(realSocket);
 
       realSocket.on('connect', () => {
-        console.log('Connected to real sync server!');
+        console.log('Connected to real sync server:', backendUrl);
+        setConnectionStatus('connected');
+      });
+
+      realSocket.on('disconnect', () => {
+        console.log('Disconnected from real sync server');
+        setConnectionStatus('disconnected');
+      });
+
+      realSocket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        setConnectionStatus('disconnected');
       });
 
       realSocket.on('chat-message', (msg) => {
@@ -98,6 +120,7 @@ function App() {
       };
     } else {
       setSocket(mockSocket);
+      setConnectionStatus('connected');
       
       const onSystemMsg = (data) => {
         addSystemMessage(data.text);
@@ -116,7 +139,7 @@ function App() {
         mockSocket.off('user-connected', onUserConnected);
       };
     }
-  }, [isRealServer]);
+  }, [isRealServer, backendUrl]);
 
   // Memoized sync notification callback to prevent hooks useEffect from constantly rebuilding
   const handleSyncEvent = useCallback((text, sender, type) => {
@@ -318,7 +341,7 @@ function App() {
           </div>
         </div>
         
-        {isInRoom && (
+        {isInRoom ? (
           <>
             {/* Center Room code and copy invite link button */}
             <div className="header-room-badge">
@@ -338,17 +361,43 @@ function App() {
                 className="badge" 
                 style={{ 
                   cursor: 'pointer', 
-                  background: isRealServer ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 75, 145, 0.12)', 
-                  borderColor: isRealServer ? 'var(--success)' : 'var(--primary)' 
+                  background: isRealServer 
+                    ? (connectionStatus === 'connected' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)')
+                    : 'rgba(255, 75, 145, 0.12)', 
+                  borderColor: isRealServer 
+                    ? (connectionStatus === 'connected' ? 'var(--success)' : 'var(--danger)')
+                    : 'var(--primary)' 
                 }} 
                 onClick={() => setIsRealServer(!isRealServer)}
+                title={isRealServer ? `Connected to ${backendUrl}` : "Mock sandbox"}
               >
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isRealServer ? 'var(--success)' : 'var(--primary)', display: 'inline-block' }}></span>
-                <span style={{ fontSize: '0.8rem' }}>{isRealServer ? 'Live Server' : 'Sandbox Mock'}</span>
+                <span style={{ 
+                  width: '6px', 
+                  height: '6px', 
+                  borderRadius: '50%', 
+                  background: isRealServer 
+                    ? (connectionStatus === 'connected' ? 'var(--success)' : 'var(--danger)')
+                    : 'var(--primary)', 
+                  display: 'inline-block' 
+                }}></span>
+                <span style={{ fontSize: '0.8rem' }}>
+                  {isRealServer 
+                    ? (connectionStatus === 'connected' ? 'Live Server' : 'Offline / Reconnecting') 
+                    : 'Sandbox Mock'}
+                </span>
               </div>
 
               <button className="icon-circle-btn" title="Participants list"><Users size={18} /></button>
-              <button className="icon-circle-btn" title="Settings"><Settings size={18} /></button>
+              <button 
+                className="icon-circle-btn" 
+                title="Server Settings"
+                onClick={() => {
+                  setTempBackendUrl(backendUrl);
+                  setShowBackendSettings(true);
+                }}
+              >
+                <Settings size={18} />
+              </button>
               
               <div className="avatar-wrapper">
                 <div className="avatar" style={getAvatarStyle(userName)}>
@@ -359,6 +408,61 @@ function App() {
               </div>
             </div>
           </>
+        ) : (
+          /* Lobby header connection status indicator */
+          <div className="header-profile-section">
+            <div 
+              className="badge" 
+              style={{ 
+                cursor: 'pointer', 
+                background: connectionStatus === 'connected' 
+                  ? 'rgba(16, 185, 129, 0.12)' 
+                  : connectionStatus === 'connecting'
+                    ? 'rgba(245, 158, 11, 0.12)'
+                    : 'rgba(239, 68, 68, 0.12)', 
+                borderColor: connectionStatus === 'connected' 
+                  ? 'var(--success)' 
+                  : connectionStatus === 'connecting'
+                    ? '#f59e0b'
+                    : 'var(--danger)' 
+              }}
+              onClick={() => {
+                setTempBackendUrl(backendUrl);
+                setShowBackendSettings(true);
+              }}
+              title={`Click to configure backend URL (Current: ${backendUrl})`}
+            >
+              <span style={{ 
+                width: '6px', 
+                height: '6px', 
+                borderRadius: '50%', 
+                background: connectionStatus === 'connected' 
+                  ? 'var(--success)' 
+                  : connectionStatus === 'connecting'
+                    ? '#f59e0b'
+                    : 'var(--danger)', 
+                display: 'inline-block' 
+              }}></span>
+              <span style={{ fontSize: '0.8rem' }}>
+                {connectionStatus === 'connected' 
+                  ? 'Server Connected' 
+                  : connectionStatus === 'connecting'
+                    ? 'Connecting...'
+                    : 'Server Disconnected'}
+              </span>
+            </div>
+            
+            <button 
+              className="icon-circle-btn" 
+              title="Server Settings"
+              onClick={() => {
+                setTempBackendUrl(backendUrl);
+                setShowBackendSettings(true);
+              }}
+            >
+              <Settings size={18} />
+            </button>
+          </div>
         )}
       </header>
 
@@ -655,6 +759,65 @@ function App() {
             </div>
           </footer>
         </>
+      )}
+
+      {showBackendSettings && (
+        <div className="modal-backdrop fade-in" onClick={() => setShowBackendSettings(false)}>
+          <div className="modal-content glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <Settings size={20} className="modal-icon" />
+              <h3>Server Connection Settings</h3>
+            </div>
+            <div className="modal-body">
+              <p>Configure the URL of your hosted backend server. The app will attempt to connect immediately.</p>
+              
+              <div className="input-group">
+                <label className="input-label">Backend Socket URL</label>
+                <input 
+                  type="text" 
+                  value={tempBackendUrl}
+                  onChange={(e) => setTempBackendUrl(e.target.value)}
+                  placeholder="e.g. https://my-backend-server.onrender.com"
+                  className="text-input"
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div className="connection-status-panel">
+                <span>Current Status:</span>
+                <span className={`status-text ${connectionStatus}`}>
+                  {connectionStatus === 'connected' ? 'CONNECTED 🟢' : connectionStatus === 'connecting' ? 'CONNECTING 🟡' : 'DISCONNECTED 🔴'}
+                </span>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  setShowBackendSettings(false);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={() => {
+                  let url = tempBackendUrl.trim();
+                  if (url.endsWith('/')) {
+                    url = url.slice(0, -1);
+                  }
+                  localStorage.setItem('custom_backend_url', url);
+                  setBackendUrl(url);
+                  setShowBackendSettings(false);
+                }}
+              >
+                Save & Connect
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

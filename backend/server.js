@@ -133,6 +133,27 @@ function handleUserExit(socket) {
   }
 }
 
+const path = require('path');
+const fs = require('fs');
+
+// Serve frontend static assets from 'frontend/dist' if they exist
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// For all other routes, send back the index.html from dist
+app.get('*', (req, res) => {
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.json({ 
+      status: 'healthy', 
+      message: 'SyncCinema backend server is running! Build the frontend (npm run build) to serve it from here.',
+      timestamp: new Date() 
+    });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`SyncCinema backend server listening on port ${PORT}`);
