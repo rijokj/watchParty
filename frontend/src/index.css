@@ -1451,15 +1451,19 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .player-floating-chat-input-form {
-    bottom: 60px;
-    width: calc(100% - 32px);
+    top: 70px;
+    bottom: auto;
+    width: calc(100% - 24px);
     max-width: none;
-    padding: 6px 14px;
+    padding: 6px 12px;
     gap: 8px;
+    border-radius: 20px;
   }
   
   .player-floating-chat-input {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    min-width: 0;
+    width: 100%;
   }
 }
 

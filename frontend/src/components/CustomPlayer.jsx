@@ -165,6 +165,16 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
     onFileLoaded(file.name);
   };
 
+  // Handle tap/click on video element
+  const handleVideoClick = () => {
+    if (window.innerWidth < 768) {
+      // Toggle controls overlay instead of pausing on touch screens
+      setShowControls(prev => !prev);
+    } else {
+      togglePlay();
+    }
+  };
+
   // Play/Pause Action
   const togglePlay = () => {
     if (!videoRef.current) return;
@@ -315,7 +325,7 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
         ref={videoRef}
         src={videoSrc}
         className="player-video"
-        onClick={togglePlay}
+        onClick={handleVideoClick}
         playsInline
       />
 
