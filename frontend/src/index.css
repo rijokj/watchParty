@@ -1777,6 +1777,9 @@ h1, h2, h3, h4, h5, h6 {
 /* No media query is required for default styles under a Mobile-First approach,
    but you can target this range specifically with: */
 @media (max-width: 575.98px) {
+    .player-floating-chat-input-form{
+    left: 3% !important;
+  }
   .d-xs-none { display: none !important; }
   .d-xs-block { display: block !important; }
   .d-xs-flex { display: flex !important; }
@@ -1785,6 +1788,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
+  .player-floating-chat-input-form{
+    left: 3% !important;
+  }
   /* Class infix: sm */
   .d-sm-none { display: none !important; }
   .d-sm-block { display: block !important; }
