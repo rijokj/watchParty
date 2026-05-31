@@ -168,8 +168,8 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
   // Handle tap/click on video element
   const handleVideoClick = () => {
     if (window.innerWidth < 768) {
-      // Toggle controls overlay instead of pausing on touch screens
-      setShowControls(prev => !prev);
+      // On touch screens, a tap should always reveal/reset the controls UI overlay
+      resetControlsTimeout();
     } else {
       togglePlay();
     }
