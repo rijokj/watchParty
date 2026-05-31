@@ -1451,17 +1451,28 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .player-floating-chat-input-form {
-    top: 70px;
-    bottom: auto;
-    width: calc(100% - 24px);
+    top: auto;
+    bottom: 0px;
+    left: 0;
+    width: 100%;
     max-width: none;
-    padding: 6px 12px;
-    gap: 8px;
-    border-radius: 20px;
+    padding: 10px 16px;
+    gap: 12px;
+    border-radius: 0px;
+    border: none;
+    border-top: 1px solid var(--border-color);
+    background: rgba(7, 8, 14, 0.96);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    transform: none;
   }
   
   .player-floating-chat-input {
-    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: white;
     min-width: 0;
     width: 100%;
   }
@@ -1712,4 +1723,39 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 0.5rem;
+}
+
+/* Double Tap Skip Feedback overlay */
+.double-tap-feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 18px 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: none;
+  animation: scale-up-fade 0.5s ease-out forwards;
+}
+
+.feedback-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+@keyframes scale-up-fade {
+  0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+  15% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+  80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }

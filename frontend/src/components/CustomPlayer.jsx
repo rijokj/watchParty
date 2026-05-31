@@ -19,6 +19,8 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [doubleTapFeedback, setDoubleTapFeedback] = useState(null); // 'rewind' or 'forward'
+  const lastTapRef = useRef(0);
 
   // Auto-hide controls on mouse idle helper
   const resetControlsTimeout = () => {
@@ -165,14 +167,44 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
     onFileLoaded(file.name);
   };
 
+  const triggerDoubleTapFeedback = (type) => {
+    setDoubleTapFeedback(type);
+    setTimeout(() => setDoubleTapFeedback(null), 600);
+  };
+
   // Handle tap/click on video element
-  const handleVideoClick = () => {
-    if (window.innerWidth < 768) {
-      // On touch screens, a tap should always reveal/reset the controls UI overlay
-      resetControlsTimeout();
+  const handleVideoClick = (e) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    const timeDiff = now - lastTapRef.current;
+
+    if (timeDiff < DOUBLE_TAP_DELAY) {
+      // Double tap detected!
+      if (videoRef.current) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+
+        if (x < width / 2) {
+          // Left side double tap: rewind 10s
+          skipTime(-10);
+          triggerDoubleTapFeedback('rewind');
+        } else {
+          // Right side double tap: forward 10s
+          skipTime(10);
+          triggerDoubleTapFeedback('forward');
+        }
+      }
     } else {
-      togglePlay();
+      // Single tap detected!
+      if (window.innerWidth < 768) {
+        // On touch screens, a tap should always reveal/reset the controls UI overlay
+        resetControlsTimeout();
+      } else {
+        togglePlay();
+      }
     }
+    lastTapRef.current = now;
   };
 
   // Play/Pause Action
@@ -328,6 +360,23 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
         onClick={handleVideoClick}
         playsInline
       />
+
+      {/* Double Tap Skip Feedback overlay */}
+      {doubleTapFeedback && (
+        <div className="double-tap-feedback">
+          {doubleTapFeedback === 'rewind' ? (
+            <div className="feedback-content">
+              <RotateCcw size={36} />
+              <span>-10s</span>
+            </div>
+          ) : (
+            <div className="feedback-content">
+              <RotateCw size={36} />
+              <span>+10s</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Danmaku reactions container */}
       <div className="danmaku-container">
