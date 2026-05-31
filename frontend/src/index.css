@@ -1458,7 +1458,7 @@ h1, h2, h3, h4, h5, h6 {
   .player-floating-chat-input-form {
     top: auto;
     bottom: 75px;
-    left: 3%;
+    left: 50%;
     width: 94%;
     max-width: none;
     padding: 8px 14px;
@@ -1467,7 +1467,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 1.5px solid rgba(255, 75, 145, 0.35);
     background: rgba(11, 12, 21, 0.85);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
-    transform: none !important; /* CRITICAL: Prevent fade-in animation from overriding the centering margins */
+    /* No transform override needed: let the animation's translate(-50%, ...) do the centering */
   }
   
   .player-floating-chat-input {
