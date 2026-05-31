@@ -1768,3 +1768,62 @@ h1, h2, h3, h4, h5, h6 {
   80% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }
+
+/* ==========================================================================
+   STANDARD RESPONSIVE BREAKPOINTS (BOOTSTRAP-COMPATIBLE LAYOUT GRID SYSTEM)
+   ========================================================================== */
+
+/* X-Small devices (portrait phones, less than 576px) */
+/* No media query is required for default styles under a Mobile-First approach,
+   but you can target this range specifically with: */
+@media (max-width: 575.98px) {
+  .d-xs-none { display: none !important; }
+  .d-xs-block { display: block !important; }
+  .d-xs-flex { display: flex !important; }
+  .d-xs-inline-flex { display: inline-flex !important; }
+}
+
+/* Small devices (landscape phones, 576px and up) */
+@media (min-width: 576px) {
+  /* Class infix: sm */
+  .d-sm-none { display: none !important; }
+  .d-sm-block { display: block !important; }
+  .d-sm-flex { display: flex !important; }
+  .d-sm-inline-flex { display: inline-flex !important; }
+}
+
+/* Medium devices (tablets, 768px and up) */
+@media (min-width: 768px) {
+  /* Class infix: md */
+  .d-md-none { display: none !important; }
+  .d-md-block { display: block !important; }
+  .d-md-flex { display: flex !important; }
+  .d-md-inline-flex { display: inline-flex !important; }
+}
+
+/* Large devices (desktops, 992px and up) */
+@media (min-width: 992px) {
+  /* Class infix: lg */
+  .d-lg-none { display: none !important; }
+  .d-lg-block { display: block !important; }
+  .d-lg-flex { display: flex !important; }
+  .d-lg-inline-flex { display: inline-flex !important; }
+}
+
+/* Extra large devices (large desktops, 1200px and up) */
+@media (min-width: 1200px) {
+  /* Class infix: xl */
+  .d-xl-none { display: none !important; }
+  .d-xl-block { display: block !important; }
+  .d-xl-flex { display: flex !important; }
+  .d-xl-inline-flex { display: inline-flex !important; }
+}
+
+/* Extra extra large devices (larger desktops, 1400px and up) */
+@media (min-width: 1400px) {
+  /* Class infix: xxl */
+  .d-xxl-none { display: none !important; }
+  .d-xxl-block { display: block !important; }
+  .d-xxl-flex { display: flex !important; }
+  .d-xxl-inline-flex { display: inline-flex !important; }
+}
