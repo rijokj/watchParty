@@ -1452,25 +1452,24 @@ h1, h2, h3, h4, h5, h6 {
 
   .player-floating-chat-input-form {
     top: auto;
-    bottom: 0px;
-    left: 0;
-    width: 100%;
+    bottom: 75px;
+    left: 3%;
+    width: 94%;
     max-width: none;
-    padding: 10px 16px;
-    gap: 12px;
-    border-radius: 0px;
-    border: none;
-    border-top: 1px solid var(--border-color);
-    background: rgba(7, 8, 14, 0.96);
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    padding: 8px 14px;
+    gap: 10px;
+    border-radius: 30px;
+    border: 1.5px solid rgba(255, 75, 145, 0.35);
+    background: rgba(11, 12, 21, 0.85);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
     transform: none;
   }
   
   .player-floating-chat-input {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    padding: 8px 14px;
-    border-radius: 20px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    border-radius: 0;
     font-size: 0.9rem;
     color: white;
     min-width: 0;
