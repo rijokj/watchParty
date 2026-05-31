@@ -4,6 +4,7 @@ export const useVideoSync = (videoRef, socket, roomId, onSystemMessage, userName
   const isProgrammaticPlay = useRef(false);
   const isProgrammaticPause = useRef(false);
   const isProgrammaticSeek = useRef(false);
+  const isProgrammaticSpeed = useRef(false);
 
   useEffect(() => {
     if (!videoRef.current || !socket || !roomId) return;
@@ -35,6 +36,14 @@ export const useVideoSync = (videoRef, socket, roomId, onSystemMessage, userName
       }, 800); // 800ms safety window for native seeked event to fire
     };
 
+    const runProgrammaticSpeed = (action) => {
+      isProgrammaticSpeed.current = true;
+      action();
+      setTimeout(() => {
+        isProgrammaticSpeed.current = false;
+      }, 800); // 800ms safety window for native ratechange event to fire
+    };
+
     // Video Event Handlers (Local user actions)
     const handlePlay = () => {
       if (isProgrammaticPlay.current) return;
@@ -54,9 +63,16 @@ export const useVideoSync = (videoRef, socket, roomId, onSystemMessage, userName
       socket.emit('seek', { roomId, time: video.currentTime, userName });
     };
 
+    const handleRateChange = () => {
+      if (isProgrammaticSpeed.current) return;
+      console.log('[Local Sync] Emitting speed-change', video.playbackRate);
+      socket.emit('speed-change', { roomId, speed: video.playbackRate, userName });
+    };
+
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
     video.addEventListener('seeked', handleSeeked);
+    video.addEventListener('ratechange', handleRateChange);
 
     // Socket Event Handlers (Remote peer actions)
     const handleRemotePlay = (data) => {
@@ -138,17 +154,32 @@ export const useVideoSync = (videoRef, socket, roomId, onSystemMessage, userName
       }
     };
 
+    const handleRemoteSpeed = (data) => {
+      console.log('[Remote Sync] Received speed-change', data);
+      
+      runProgrammaticSpeed(() => {
+        video.playbackRate = data.speed;
+      });
+
+      if (onSystemMessage) {
+        onSystemMessage(`${data.userName || 'Partner'} changed playback speed to ${data.speed}x`, data.userName || 'Partner', 'speed');
+      }
+    };
+
     socket.on('play', handleRemotePlay);
     socket.on('pause', handleRemotePause);
     socket.on('seek', handleRemoteSeek);
+    socket.on('speed-change', handleRemoteSpeed);
 
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('seeked', handleSeeked);
+      video.removeEventListener('ratechange', handleRateChange);
       socket.off('play', handleRemotePlay);
       socket.off('pause', handleRemotePause);
       socket.off('seek', handleRemoteSeek);
+      socket.off('speed-change', handleRemoteSpeed);
     };
   }, [videoRef, socket, roomId, onSystemMessage, userName, hasFile]);
 };

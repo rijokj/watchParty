@@ -122,6 +122,9 @@ export const Chat = ({ messages, onSendMessage, userName, activeUsers, isSimulat
             <button className="btn-sim" onClick={() => onTriggerSimulation('peer-seek')}>
               Simulate Peer Seek
             </button>
+            <button className="btn-sim" onClick={() => onTriggerSimulation('peer-speed')}>
+              Simulate Peer Speed (1.5x)
+            </button>
             <button className="btn-sim" onClick={() => onTriggerSimulation('peer-msg')}>
               Simulate Peer Message
             </button>

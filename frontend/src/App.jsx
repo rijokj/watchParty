@@ -303,6 +303,9 @@ function App() {
         const randomTime = Math.floor(Math.random() * (videoRef.current.duration || 120));
         mockSocket.trigger('seek', { time: randomTime, userName: 'Priya' });
         break;
+      case 'peer-speed':
+        mockSocket.trigger('speed-change', { speed: 1.5, userName: 'Priya' });
+        break;
       case 'peer-msg':
         const timeString = formatMsgTime();
         const mockMsg = {

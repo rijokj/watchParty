@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize2, FileVideo, RotateCcw, RotateCw, Activity, Tv, Cast, MessageSquare, Send } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize2, FileVideo, RotateCcw, RotateCw, Activity, Tv, Cast, MessageSquare, Send, Plus } from 'lucide-react';
 
 export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification, messages, onSendMessage }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -10,6 +10,16 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
   const [showControls, setShowControls] = useState(true);
   const [fileName, setFileName] = useState('');
   const [videoSrc, setVideoSrc] = useState('');
+  
+  // Custom & Inbuilt subtitle states and active menu triggers
+  const [activePopover, setActivePopover] = useState(null); // 'speed' | 'subtitles' | null
+  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [customTracks, setCustomTracks] = useState([]);
+  const [inbuiltTracks, setInbuiltTracks] = useState([]);
+  const [selectedTrackId, setSelectedTrackId] = useState('off');
+
+  const speedPopoverRef = useRef(null);
+  const subtitlePopoverRef = useRef(null);
   
   const [danmakus, setDanmakus] = useState([]);
   const [floatingInputText, setFloatingInputText] = useState('');
@@ -62,6 +72,138 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
       }
     };
   }, [videoSrc]);
+
+  // Reset subtitles and speed when video source changes
+  useEffect(() => {
+    setCustomTracks([]);
+    setSelectedTrackId('off');
+    setInbuiltTracks([]);
+    setPlaybackSpeed(1);
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1;
+    }
+  }, [videoSrc, videoRef]);
+
+  // Manage track modes based on selectedTrackId
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const tracks = video.textTracks;
+    for (let i = 0; i < tracks.length; i++) {
+      const t = tracks[i];
+      const trackId = t.id || t.label ? `track-${t.label}` : `track-idx-${i}`;
+      if (selectedTrackId === trackId) {
+        t.mode = 'showing';
+      } else {
+        t.mode = 'disabled';
+      }
+    }
+  }, [selectedTrackId, customTracks, inbuiltTracks, videoRef]);
+
+  // Scan and register inbuilt and custom tracks
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTrackChange = () => {
+      const tracksList = Array.from(video.textTracks || []).map((t, idx) => ({
+        id: t.id || t.label ? `track-${t.label}` : `track-idx-${idx}`,
+        label: t.label || `Track ${idx + 1} (${t.language || 'unknown'})`,
+        language: t.language,
+        kind: t.kind,
+        inbuilt: !customTracks.some(ct => ct.label === t.label)
+      }));
+      setInbuiltTracks(tracksList.filter(t => t.inbuilt));
+    };
+
+    if (video.textTracks) {
+      video.textTracks.addEventListener('addtrack', handleTrackChange);
+      video.textTracks.addEventListener('removetrack', handleTrackChange);
+    }
+
+    video.addEventListener('loadedmetadata', handleTrackChange);
+    handleTrackChange();
+
+    return () => {
+      if (video.textTracks) {
+        video.textTracks.removeEventListener('addtrack', handleTrackChange);
+        video.textTracks.removeEventListener('removetrack', handleTrackChange);
+      }
+      video.removeEventListener('loadedmetadata', handleTrackChange);
+    };
+  }, [videoRef, customTracks, hasFile]);
+
+  // Sync state with ratechange event
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleRateChange = () => {
+      setPlaybackSpeed(video.playbackRate);
+    };
+
+    video.addEventListener('ratechange', handleRateChange);
+    return () => {
+      video.removeEventListener('ratechange', handleRateChange);
+    };
+  }, [videoRef, hasFile]);
+
+  // Handle click outside popovers
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (
+        (speedPopoverRef.current && !speedPopoverRef.current.contains(e.target)) &&
+        (subtitlePopoverRef.current && !subtitlePopoverRef.current.contains(e.target))
+      ) {
+        setActivePopover(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Convert SRT subtitles to WebVTT format
+  const convertSrtToVtt = (srtText) => {
+    let vttText = 'WEBVTT\n\n';
+    let normalized = srtText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const timestampRegex = /(\d{2}:\d{2}:\d{2}),(\d{3})/g;
+    normalized = normalized.replace(timestampRegex, '$1.$2');
+    vttText += normalized;
+    return vttText;
+  };
+
+  // Upload and register custom subtitles file
+  const handleSubtitleUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      let text = event.target.result;
+      
+      if (file.name.endsWith('.srt')) {
+        text = convertSrtToVtt(text);
+      }
+      
+      const blob = new Blob([text], { type: 'text/vtt' });
+      const url = URL.createObjectURL(blob);
+      
+      const newTrack = {
+        id: `track-${file.name}`,
+        label: file.name,
+        src: url,
+        kind: 'subtitles',
+        srclang: 'custom',
+        default: true
+      };
+      
+      setCustomTracks(prev => [...prev, newTrack]);
+      setSelectedTrackId(newTrack.id);
+      setActivePopover(null);
+    };
+    reader.readAsText(file);
+  };
 
   // Video element event listeners for updating internal control UI state
   useEffect(() => {
@@ -359,7 +501,19 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
         className="player-video"
         onClick={handleVideoClick}
         playsInline
-      />
+      >
+        {customTracks.map((track) => (
+          <track
+            key={track.id}
+            id={track.id}
+            label={track.label}
+            src={track.src}
+            kind={track.kind}
+            srcLang={track.srclang}
+            default={selectedTrackId === track.id}
+          />
+        ))}
+      </video>
 
       {/* Double Tap Skip Feedback overlay */}
       {doubleTapFeedback && (
@@ -449,7 +603,7 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
         </div>
 
         {/* Bottom controls panel */}
-        <div className="player-overlay-bottom">
+        <div className="player-overlay-bottom" style={{ position: 'relative' }}>
           {/* Custom Timeline slider */}
           <div className="player-timeline-container">
             <input 
@@ -505,22 +659,42 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
               </div>
 
               {/* CC indicator */}
-              <div style={{
-                color: 'var(--text-primary)',
-                border: '1.5px solid currentColor',
-                borderRadius: '4px',
-                padding: '2px 5px',
-                fontSize: '10px',
-                fontWeight: 'bold',
-                lineHeight: 1,
-                cursor: 'pointer'
-              }} title="Closed Captions">
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePopover(prev => prev === 'subtitles' ? null : 'subtitles');
+                }}
+                style={{
+                  color: selectedTrackId !== 'off' || activePopover === 'subtitles' ? 'var(--primary)' : 'var(--text-primary)',
+                  border: `1.5px solid ${selectedTrackId !== 'off' || activePopover === 'subtitles' ? 'var(--primary)' : 'currentColor'}`,
+                  borderRadius: '4px',
+                  padding: '2px 5px',
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  lineHeight: 1,
+                  cursor: 'pointer',
+                  transition: 'var(--transition-smooth)'
+                }} 
+                title="Closed Captions"
+              >
                 CC
               </div>
 
               {/* Speed select */}
-              <span style={{ fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                1.0x
+              <span 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePopover(prev => prev === 'speed' ? null : 'speed');
+                }}
+                style={{ 
+                  fontSize: '13px', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer', 
+                  color: playbackSpeed !== 1 || activePopover === 'speed' ? 'var(--primary)' : 'var(--text-secondary)',
+                  transition: 'var(--transition-smooth)'
+                }}
+              >
+                {playbackSpeed === 1 ? '1.0x' : `${playbackSpeed}x`}
               </span>
 
               <button className="player-btn" onClick={toggleFullscreen} aria-label="Toggle Fullscreen">
@@ -528,6 +702,96 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
               </button>
             </div>
           </div>
+
+          {/* Subtitles Popover Menu */}
+          {activePopover === 'subtitles' && (
+            <div ref={subtitlePopoverRef} className="player-popover player-popover-right" style={{ bottom: '75px', right: '90px', width: '250px' }}>
+              <div className="popover-header">Subtitles</div>
+              
+              <button
+                className={`popover-item ${selectedTrackId === 'off' ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedTrackId('off');
+                  setActivePopover(null);
+                }}
+              >
+                Off
+              </button>
+              
+              {inbuiltTracks.length > 0 && (
+                <>
+                  <div className="popover-divider" />
+                  <div style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', padding: '4px 10px', textTransform: 'uppercase' }}>Inbuilt Subtitles</div>
+                  {inbuiltTracks.map((track) => (
+                    <button
+                      key={track.id}
+                      className={`popover-item ${selectedTrackId === track.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedTrackId(track.id);
+                        setActivePopover(null);
+                      }}
+                    >
+                      {track.label}
+                    </button>
+                  ))}
+                </>
+              )}
+              
+              {customTracks.length > 0 && (
+                <>
+                  <div className="popover-divider" />
+                  <div style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', padding: '4px 10px', textTransform: 'uppercase' }}>Custom Subtitles</div>
+                  {customTracks.map((track) => (
+                    <button
+                      key={track.id}
+                      className={`popover-item ${selectedTrackId === track.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedTrackId(track.id);
+                        setActivePopover(null);
+                      }}
+                    >
+                      {track.label.length > 20 ? `${track.label.substring(0, 17)}...` : track.label}
+                    </button>
+                  ))}
+                </>
+              )}
+              
+              <div className="popover-divider" />
+              
+              <input 
+                type="file" 
+                accept=".srt,.vtt" 
+                onChange={handleSubtitleUpload}
+                id="subtitle-file-selector"
+                style={{ display: 'none' }}
+              />
+              <label htmlFor="subtitle-file-selector" className="subtitle-upload-btn">
+                <Plus size={14} />
+                <span>Upload Subtitle (.srt, .vtt)</span>
+              </label>
+            </div>
+          )}
+
+          {/* Speed Popover Menu */}
+          {activePopover === 'speed' && (
+            <div ref={speedPopoverRef} className="player-popover player-popover-right" style={{ bottom: '75px', right: '40px' }}>
+              <div className="popover-header">Playback Speed</div>
+              {[0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0].map((speed) => (
+                <button
+                  key={speed}
+                  className={`popover-item ${playbackSpeed === speed ? 'active' : ''}`}
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.playbackRate = speed;
+                    }
+                    setActivePopover(null);
+                  }}
+                >
+                  {speed === 1.0 ? 'Normal (1.0x)' : `${speed}x`}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

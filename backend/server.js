@@ -87,6 +87,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Speed-change Sync Handler
+  socket.on('speed-change', (data) => {
+    const { roomId } = socket;
+    if (roomId) {
+      console.log(`[Sync Event] Speed change emitted in room ${roomId} to ${data.speed} by ${data.userName}`);
+      socket.to(roomId).emit('speed-change', data);
+    }
+  });
+
   // 5. Chat Message Relay
   socket.on('chat-message', (data) => {
     const { roomId } = socket;

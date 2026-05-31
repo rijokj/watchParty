@@ -1769,6 +1769,108 @@ h1, h2, h3, h4, h5, h6 {
   100% { transform: translate(-50%, -50%) scale(1.05); opacity: 0; }
 }
 
+/* Subtitle & Speed Popovers styling */
+.player-popover {
+  position: absolute;
+  background: rgba(11, 12, 21, 0.94);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 75, 145, 0.25);
+  border-radius: var(--border-radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1000;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 20px var(--primary-glow);
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.player-popover-right {
+  pointer-events: auto;
+}
+
+.popover-header {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 4px;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: var(--transition-smooth);
+}
+
+.popover-item:hover {
+  background: rgba(255, 75, 145, 0.1);
+  color: var(--primary);
+}
+
+.popover-item.active {
+  background: rgba(255, 75, 145, 0.15);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.popover-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.subtitle-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 75, 145, 0.3);
+  color: var(--text-secondary);
+  padding: 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: var(--transition-smooth);
+  box-sizing: border-box;
+}
+
+.subtitle-upload-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(255, 75, 145, 0.08);
+}
+
+/* Beautiful custom cues overlay */
+::cue {
+  background: rgba(7, 8, 14, 0.85) !important;
+  color: #f3f4f6 !important;
+  font-family: var(--font-sans) !important;
+  font-size: 1.15rem !important;
+  font-weight: 500 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+}
+
 /* ==========================================================================
    STANDARD RESPONSIVE BREAKPOINTS (BOOTSTRAP-COMPATIBLE LAYOUT GRID SYSTEM)
    ========================================================================== */
@@ -1776,7 +1878,13 @@ h1, h2, h3, h4, h5, h6 {
 /* X-Small devices (portrait phones, less than 576px) */
 /* No media query is required for default styles under a Mobile-First approach,
    but you can target this range specifically with: */
-@media (max-width: 575.98px) {
+@media (max-width: 320px) {
+    .player-floating-chat-input-form{
+    left: 3% !important;
+  }
+}
+
+   @media (max-width: 575.98px) {
     .player-floating-chat-input-form{
     left: 3% !important;
   }
@@ -1788,9 +1896,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Small devices (landscape phones, 576px and up) */
 @media (min-width: 576px) {
-  .player-floating-chat-input-form{
-    left: 3% !important;
-  }
+ 
   /* Class infix: sm */
   .d-sm-none { display: none !important; }
   .d-sm-block { display: block !important; }
