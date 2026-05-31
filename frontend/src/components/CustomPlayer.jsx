@@ -20,20 +20,33 @@ export const CustomPlayer = ({ videoRef, onFileLoaded, hasFile, syncNotification
   const controlsTimeoutRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Auto-hide controls on mouse idle
-  const handleMouseMove = () => {
+  // Auto-hide controls on mouse idle helper
+  const resetControlsTimeout = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current);
     }
     controlsTimeoutRef.current = setTimeout(() => {
-      if (isPlaying) {
+      if (videoRef.current && !videoRef.current.paused) {
         setShowControls(false);
       }
     }, 3000);
   };
 
+  const handleMouseMove = () => {
+    resetControlsTimeout();
+  };
+
+  // Sync controls visibility state with playing/paused state changes
   useEffect(() => {
+    if (isPlaying) {
+      resetControlsTimeout();
+    } else {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+        clearTimeout(controlsTimeoutRef.current);
+      }
+    }
     return () => {
       if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     };
