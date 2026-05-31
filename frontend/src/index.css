@@ -1449,6 +1449,18 @@ h1, h2, h3, h4, h5, h6 {
   .footer-left {
     display: none; /* Hide footer text on mobile */
   }
+
+  .player-floating-chat-input-form {
+    bottom: 60px;
+    width: calc(100% - 32px);
+    max-width: none;
+    padding: 6px 14px;
+    gap: 8px;
+  }
+  
+  .player-floating-chat-input {
+    font-size: 0.9rem;
+  }
 }
 
 /* Danmaku reactions container */
