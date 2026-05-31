@@ -1450,6 +1450,11 @@ h1, h2, h3, h4, h5, h6 {
     display: none; /* Hide footer text on mobile */
   }
 
+  /* Chat input is styled dynamically under max-width: 768px query below */
+}
+
+/* Responsive floating chat input for mobile portrait & landscape screens (320px to 768px) */
+@media (max-width: 768px) {
   .player-floating-chat-input-form {
     top: auto;
     bottom: 75px;
@@ -1462,7 +1467,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 1.5px solid rgba(255, 75, 145, 0.35);
     background: rgba(11, 12, 21, 0.85);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
-    transform: none;
+    transform: none !important; /* CRITICAL: Prevent fade-in animation from overriding the centering margins */
   }
   
   .player-floating-chat-input {
@@ -1531,6 +1536,11 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+@keyframes floatingChatFadeIn {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* Floating Chat Input in Fullscreen Player */
 .player-floating-chat-input-form {
   position: absolute;
@@ -1550,7 +1560,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 90%;
   max-width: 480px;
   z-index: 100;
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: floatingChatFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .player-floating-chat-input {
